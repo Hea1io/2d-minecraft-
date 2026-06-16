@@ -91,9 +91,9 @@ function updatePlayer() {
     }
 
     if (
-        (keys["w"] || keys["ArrowUp"]) || keys[" "]) &&
+        (keys["w"] || keys["ArrowUp"] || keys[" "]) && 
         player.onGround
-    ) {
+    ){
         player.vy = JUMP_SPEED;
         player.onGround = false;
     }
