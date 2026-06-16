@@ -6,16 +6,27 @@ const GRAVITY = 0.5;
 const MOVE_SPEED = 4;
 const JUMP_SPEED = -12; 
 
-const world = [
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-  [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+let cameraX = 0;
 
-];
+
+const world = [];
+
+for (let row = 0; row <20; row++) {
+
+    world[row] = [];
+
+    for (let col = 0; col<50; col++) {
+        if (row < 10) {
+            world[row][col] = 0;
+        }
+        else if (row === 10) {
+            world[row][col] = 1;
+        }
+        else {
+            world[row][col] = 2;
+        }
+    }
+}
 
 const player = {
     x: 100,
@@ -49,7 +60,7 @@ function drawBlock(x, y, type) {
     }
 
     ctx.fillRect(
-        x * TILE_SIZE,
+        x * TILE_SIZE - cameraX,
         y * TILE_SIZE,
         TILE_SIZE,
         TILE_SIZE
@@ -71,7 +82,7 @@ function drawPlayer() {
     ctx.fillStyle = "blue";
 
     ctx.fillRect(
-        player.x,
+        player.x - cameraX,
         player.y,
         player.width,
         player.height
@@ -105,14 +116,22 @@ player.x += player.vx;
 player.vy += GRAVITY;
 player.y += player.vy;
 
-const groundY = 4 * TILE_SIZE;
+const groundY = 10 * TILE_SIZE;
 
 if (player.y + player.height > groundY) {
     player.y = groundY - player.height;
     player.vy = 0;
     player.onGround = true;
  } 
+
+ cameraX = player.x - canvas.width / 2;
+
+ if (cameraX < 0) {
+    cameraX = 0;
+ }
 }
+
+
 
 function draw() {
     
@@ -122,6 +141,26 @@ function draw() {
 
     drawPlayer();
 }
+
+canvas.addEventListener("click", function(event) {
+    const rect = canvas.getBoundingClientRect();
+
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+
+    const worldX = Math.floor((mouseX + cameraX) / TILE_SIZE);
+    const worldY = Math.floor(mouseY / TILE_SIZE);
+
+    if (
+        worldY >= 0 &&
+        worldY < world.length &&
+        worldX >= 0 &&
+        worldX < world[0].length
+    ) {
+        world[worldY][worldX] = 0;
+    }
+    
+});
 
 function gameLoop() {
     updatePlayer();
