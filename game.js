@@ -89,6 +89,20 @@ function drawPlayer() {
     );
 }
 
+function getBlock(x, y) {
+
+    if (
+        x < 0 ||
+        x >= world[0].length ||
+        y < 0 ||
+        y >= world.length 
+    ) {
+        return 0;
+    }
+
+    return world[y][x];
+}
+
 function updatePlayer() {
     
     player.vx = 0;
@@ -116,13 +130,33 @@ player.x += player.vx;
 player.vy += GRAVITY;
 player.y += player.vy;
 
-const groundY = 10 * TILE_SIZE;
+const playerBottom = player.y + player.height;
 
-if (player.y + player.height > groundY) {
-    player.y = groundY - player.height;
+const blockX = Math.floor(
+    (player.x + player.width / 2) / TILE_SIZE
+);
+
+const blockY = Math.floor(
+    (playerBottom + 1) / TILE_SIZE
+);
+
+if (getBlock(blockX, blockY) !== 0) {
+
+    player.y = blockY * TILE_SIZE - player.height;
+
     player.vy = 0;
     player.onGround = true;
- } 
+} else {
+
+    player.onGround = false;
+}
+
+if (player.y > canvas.height + 500) {
+    player.y = 0;
+    player.vy = 0;
+}
+
+
 
  cameraX = player.x - canvas.width / 2;
 
