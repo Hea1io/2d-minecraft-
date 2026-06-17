@@ -37,6 +37,25 @@ for (let row = 0; row <20; row++) {
     }
 }
 
+for (let tree = 0; tree < 8; tree++) { 
+      const x = Math.floor(Math.random() * 46) + 2;
+
+    world[9][x] = 3;
+    world[8][x] = 3;
+    world[7][x] = 3;
+
+    world[6][x] = 4;
+
+    world[7][x - 1] = 4;
+    world[7][x + 1] = 4;
+
+    world[6][x - 1] = 4;
+    world[6][x + 1] = 4;
+
+    world[5][x] = 4;
+
+}
+
 const player = {
     x: 100,
     y: 50,
@@ -103,6 +122,15 @@ function drawBlock(x, y, type) {
 
     if (type === 2) {
         ctx.fillStyle = "brown";
+    }
+
+    if (type === 3) {
+        ctx.fillStyle = "#8B4513";
+    }
+
+    if (type === 4) {
+        ctx.fillStyle = "#77DD77"
+
     }
 
     ctx.fillRect(
