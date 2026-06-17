@@ -8,6 +8,8 @@ const JUMP_SPEED = -12;
 
 let cameraX = 0;
 
+let gameState = "menu";
+
 let mouseDown = false;
 
 let miningBlockX = -1; 
@@ -54,6 +56,43 @@ document.addEventListener("keydown", function(event) {
 document.addEventListener("keyup", function(event) {
     keys[event.key] = false;
 });
+
+document.addEventListener("keydown", function(event) {
+    if ( 
+        gameState === "menu" && 
+        event.key === "Enter"
+
+    ){
+        gameState = "playing";
+    }
+
+});
+
+
+function drawMenu() {
+
+    ctx.fillStyle = "skyblue";
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "black";
+    ctx.font = "48px Arial";
+    ctx.textAlign = "center";
+
+    ctx.fillText(
+        "Minecraft 2D",
+        canvas.width / 2,
+        150
+    );
+
+    ctx.font = "24px Arial";
+
+    ctx.fillText(
+        "Press ENTER to Start",
+        canvas.width / 2,
+        250
+
+    );
+}
 
 function drawBlock(x, y, type) {
     if (type === 0) return;
@@ -285,9 +324,16 @@ function drawMiningEffect() {
    
 
 function gameLoop() {
-    updatePlayer();
-    updateMining();
-    draw();
+
+    if (gameState === "menu") {
+
+        drawMenu();   
+    } else if (gameState === "playing") {
+
+        updatePlayer();
+        updateMining();
+        draw();
+    }
     requestAnimationFrame(gameLoop);
 
 }
