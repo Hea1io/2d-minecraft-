@@ -8,6 +8,13 @@ const JUMP_SPEED = -12;
 
 let cameraX = 0;
 
+let mouseDown = false;
+
+let miningBlockX = -1; 
+let miningBlockY = -1; 
+
+let miningProgress = 0;
+const MINING_TIME = 30;
 
 const world = [];
 
@@ -173,31 +180,113 @@ function draw() {
 
     drawWorld();
 
+    drawMiningEffect();
+
     drawPlayer();
 }
 
-canvas.addEventListener("click", function(event) {
+canvas.addEventListener("mousedown", function(event) {
+
+    mouseDown = true;
+
     const rect = canvas.getBoundingClientRect();
 
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
 
-    const worldX = Math.floor((mouseX + cameraX) / TILE_SIZE);
-    const worldY = Math.floor(mouseY / TILE_SIZE);
+    miningBlockX = Math.floor((mouseX + cameraX) / TILE_SIZE);
+    miningBlockY = Math.floor(mouseY / TILE_SIZE);
 
-    if (
-        worldY >= 0 &&
-        worldY < world.length &&
-        worldX >= 0 &&
-        worldX < world[0].length
-    ) {
-        world[worldY][worldX] = 0;
-    }
-    
+    miningProgress = 0;
+
 });
+
+document.addEventListener("mouseup", function() {
+    
+    mouseDown = false;
+
+    miningBlockX = -1;
+    miningBlockY = -1;
+    miningProgress = 0;
+
+});
+
+function updateMining() {
+
+    if (!mouseDown) {
+        return;
+    }
+    if (miningBlockX === -1) {
+        return;
+    }
+
+    miningProgress++; 
+
+    if (miningProgress >= MINING_TIME) {
+
+        world[miningBlockY][miningBlockX] = 0;
+
+        miningBlockX = -1;
+        miningBlockY = -1;
+        miningProgress = 0;
+    }
+}
+
+
+function drawMiningEffect() {
+
+    if (miningBlockX == -1) {
+        return;
+    }
+
+    const progress = miningProgress / MINING_TIME;
+
+    const x = miningBlockX * TILE_SIZE - cameraX;
+    const y = miningBlockY * TILE_SIZE;
+
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 2;
+
+    if (progress > 0.2) { 
+        ctx.beginPath();
+        ctx.moveTo(x + 5, y + 5 );
+        ctx.lineTo(x + 27, y + 27);
+        ctx.stroke();
+    }
+
+
+    if (progress > 0.4) { 
+        ctx.beginPath();
+        ctx.moveTo(x + 27, y + 5 );
+        ctx.lineTo(x + 5, y + 27);
+        ctx.stroke();
+    }
+
+
+
+    if (progress > 0.6) { 
+        ctx.beginPath();
+        ctx.moveTo(x +16, y);
+        ctx.lineTo(x + 16, y + 32);
+        ctx.stroke();
+    }
+
+
+
+    if (progress > 0.8) { 
+        ctx.beginPath();
+        ctx.moveTo(x, y + 16 );
+        ctx.lineTo(x + 32, y + 16);
+        ctx.stroke();
+    }
+}
+
+
+   
 
 function gameLoop() {
     updatePlayer();
+    updateMining();
     draw();
     requestAnimationFrame(gameLoop);
 
