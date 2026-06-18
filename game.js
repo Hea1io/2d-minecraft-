@@ -7,17 +7,29 @@ const MOVE_SPEED = 4;
 const JUMP_SPEED = -12; 
 
 let cameraX = 0;
-
 let gameState = "menu";
-
 let mouseDown = false;
-
 let miningBlockX = -1; 
 let miningBlockY = -1; 
-
 let miningProgress = 0;
-const MINING_TIME = 30;
+let inventoryOpen = false;
+let selectedBlock = 1;
+const BLOCK_TYPES = {
+    1: {name: "Grass", color: "green"},
+    2: {name: "Dirt", color: "brown"},
+    3: {name: "Wood", color: "#8B4513"},
+    4: {name: "Leaves", color: "#77DD77"}
+};
 
+const inventory = {
+    dirt: 0,
+    grass: 0,
+    wood: 0,
+    leaves: 0
+};
+
+const MINING_TIME = 30;
+const droppedItems = [];
 const world = [];
 
 for (let row = 0; row <20; row++) {
@@ -83,6 +95,12 @@ document.addEventListener("keydown", function(event) {
 
     ){
         gameState = "playing";
+    }
+    keys[event.key] = true;
+
+    if (event.key.toLowerCase() === "e") {
+
+        inventoryOpen = !inventoryOpen;
     }
 
 });
@@ -239,8 +257,83 @@ if (player.y > canvas.height + 500) {
  }
 }
 
+function drawInventory() {
+    if (!inventoryOpen) {
+        return;
+    }
+
+    ctx.fillStyle= 'rgba(0,0,0,0.8)';
+    ctx.fillRect(100, 50, 400, 300);
+
+    ctx.fillStyle = "white";
+    ctx.font = "24px Arial"; 
+    ctx.fillText("Inventory", 120, 90);
+
+    const blockTypes = [
+        { id: 1, name: "Grass", key: 'grass'},
+        { id: 2, name: "Dirt", key: 'dirt'},
+        {id: 3, name: "Wood", key: 'wood'},
+        {id: 4, name: "Leaves", key: 'leaves'},
+
+    ];
+
+let yPos = 120;
+for (let i = 0; i < blockTypes.length; i++) {
+    const block = blockTypes[i];
+    const xPos = 120 + (i * 80);
+
+    ctx.fillStyle = BLOCK_TYPES[block.id].color;
+    ctx.fillRect(xPos, yPos, 30, 30);
+    ctx.strokeStyle = "white";
+    ctx.linewidth = 1;
+    ctx.strokeRect(xPos, yPos, 30, 30);
+
+   ctx.fillStyle = "white";
+   ctx.font = "16px Arial";
+   ctx.fillText(inventory[block.key], xPos + 35, yPos + 20);
+
+   ctx.font = "12px Arial";
+   ctx.fillText(block.name, xPos, yPos + 45);
+
+   if (selectedBlock === block.id) {
+    ctx.strokeStyle = "yellow";
+    ctx.lineWidth = 3;
+    ctx.strokeRect (xPos -2, yPos -2, 34, 34);
+
+   }
+
+ }
+
+ ctx.fillStyle = "white";
+ ctx.font = "16px Arial";
+ ctx.fillText("Click a block to select it", 120, 300);
+ ctx.fillText("Right-click to place blocks", 120, 330);
+}
 
 
+function updateItems() { 
+
+    for (let i = droppedItems.length - 1; i >= 0; i--) {
+
+        const item = droppedItems[i];
+
+        const dx = player.x + player.width / 2 - item.x;
+        const dy = player.y + player.height / 2 - item.y;
+
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < 30){
+
+            if (item.type === 1) inventory.grass++;
+            if (item.type === 2) inventory.dirt++;
+            if (item.type === 3) inventory.wood++;
+            if (item.type === 4) inventory.leaves++;
+
+            droppedItems.splice(i, 1);
+        }
+
+    }
+}
 function draw() {
     
     ctx.clearRect(0,0, canvas.width, canvas.height);
@@ -250,22 +343,80 @@ function draw() {
     drawMiningEffect();
 
     drawPlayer();
+
+    drawDroppedItems();
+
+    drawInventory();
 }
 
 canvas.addEventListener("mousedown", function(event) {
-
-    mouseDown = true;
-
+ 
     const rect = canvas.getBoundingClientRect();
-
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
 
-    miningBlockX = Math.floor((mouseX + cameraX) / TILE_SIZE);
-    miningBlockY = Math.floor(mouseY / TILE_SIZE);
+   const blockX = Math.floor((mouseX + cameraX) / TILE_SIZE);
+   const blockY = Math.floor(mouseY / TILE_SIZE);
 
-    miningProgress = 0;
+   if (event.button ===2) {
+    event.preventDefault();
 
+    if (inventoryOpen) return;
+
+    const blockKey = ['', 'grass', 'dirt', 'wood', 'leaves'][selectedBlock];
+    if (inventory[blockKey] <= 0) return;
+
+    if (blockX < 0 || blockX >= world[0]. length || blockY < 0 || blockY >= world.length) return;
+
+        if (world[blockY][blockX] !== 0) return;
+
+        const playerBlockX = Math.floor((player.x + player.width / 2) / TILE_SIZE);
+
+        const playerBlockY = Math.floor((player.y + player.height) / TILE_SIZE);
+
+        if (blockX === playerBlockX &&
+            (blockY === playerBlockY || blockY === playerBlockY -1)) {
+                return;
+            }
+            
+            world[blockY][blockX] = selectedBlock;
+            inventory[blockKey]--;
+   }
+            if (event.button === 0) {
+                if (inventoryOpen) return;
+
+                mouseDown = true;
+                miningBlockX = blockX;
+                miningBlockY = blockY;
+                miningProgress = 0;
+            }
+});
+
+canvas.addEventListener("click", function(event) {
+    if (!inventoryOpen) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+
+    const blockTypes = [1,2,3,4];
+    let yPos = 120;
+
+    for (let i = 0; i < blockTypes.length; i++) {  
+        const xPos = 120 + (i * 80);
+
+        if (mouseX >= xPos && mouseX <= xPos + 30 &&
+            mouseY >= yPos && mouseY <= yPos + 30) {
+                const blockId = blockTypes[i];
+                const blockKey = ['grass', 'dirt', 'wood', 'leaves'][i];
+
+                if (inventory[blockKey] > 0) {
+                    selectedBlock = blockId;
+                }
+                break;
+            }
+      
+     }
 });
 
 document.addEventListener("mouseup", function() {
@@ -291,8 +442,15 @@ function updateMining() {
 
     if (miningProgress >= MINING_TIME) {
 
-        world[miningBlockY][miningBlockX] = 0;
+       const blockType = world[miningBlockY][miningBlockX];
 
+       droppedItems.push({
+        x: miningBlockX * TILE_SIZE + TILE_SIZE / 2,
+        y: miningBlockY * TILE_SIZE + TILE_SIZE / 2,
+        type: blockType
+       });
+
+       world[miningBlockY][miningBlockX] = 0;
         miningBlockX = -1;
         miningBlockY = -1;
         miningProgress = 0;
@@ -348,6 +506,32 @@ function drawMiningEffect() {
     }
 }
 
+function drawDroppedItems() {
+    for (let item of droppedItems) {
+        if (item.type === 1) {
+            ctx.fillStyle = "green";
+        }
+        if (item.type === 2){
+            ctx.fillStyle = "brown";
+        
+        }
+
+        if (item.type === 3){
+            ctx.fillStyle = "#8B4513"
+        }
+
+        if (item.type === 4){
+            ctx.fillStyle = "#77DD77"
+        }
+
+        ctx.fillRect(
+            item.x - cameraX - 8,
+            item.y - 8,
+            16,
+            16
+        );
+    }
+}
 
    
 
@@ -360,6 +544,7 @@ function gameLoop() {
 
         updatePlayer();
         updateMining();
+        updateItems();
         draw();
     }
     requestAnimationFrame(gameLoop);
