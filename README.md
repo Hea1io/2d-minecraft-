@@ -11,9 +11,9 @@ with blocks that they mine.
 
 # Screenshots 
 
-![Menu screen of the 2d minecraft game](<Screenshot 2026-06-23 at 1.44.43 pm.png>)
+![Menu screen of the 2d minecraft game](screenshot1.png)
 
-![Minecraft 2d game, in game showing player and enviroment](<Screenshot 2026-06-23 at 1.45.05 pm.png>)
+![Minecraft 2d game, in game showing player and enviroment](screenshot2.png)
 
 ![inventory of minecraft 2d game ](image.png)
 
@@ -35,8 +35,13 @@ RMB - Place block
 4. View blocks in your inventory by clicking E 
 5. Break 50 blocks to beat the game! 
 
-
 # Tech Stack
 - Static HTML 
 - Javascript 
 - CSS
+
+# Future Improvments 
+This game is in an early stage of development, with many other features to be added, such as more blocks, bigger island,
+player customisation and more. 
+
+# Made by Saatvik the Goat!!!!
