@@ -14,6 +14,10 @@ let miningBlockY = -1;
 let miningProgress = 0;
 let inventoryOpen = false;
 let selectedBlock = 1;
+let score = 0;
+let gameOver = false;
+let blocksMined = 0;
+const WIN_CONDITION = 50;
 const BLOCK_TYPES = {
     1: {name: "Grass", color: "green"},
     2: {name: "Dirt", color: "brown"},
@@ -80,13 +84,12 @@ const player = {
 
 const keys = {};
 
-document.addEventListener("keydown", function(event) {
-    keys[event.key] = true;
-});
 
 document.addEventListener("keyup", function(event) {
     keys[event.key] = false;
 });
+
+
 
 document.addEventListener("keydown", function(event) {
     if ( 
@@ -103,8 +106,54 @@ document.addEventListener("keydown", function(event) {
         inventoryOpen = !inventoryOpen;
     }
 
+    if (event.key.toLowerCase() === "r" && gameOver) {
+        restartGame();
+    }
+
 });
 
+
+function restartGame() {
+    player.x = 100;
+    player.y = 50;
+    player.vx = 0;
+    player.vy = 0;
+    player.onGround = false;
+
+    gameOver = false;
+    score = 0;
+    blocksMined = 0;
+
+    for (let row = 0; row < 20; row++) {
+        world[row] = [];
+        for (let col = 0; col < 50; col++) {
+            if (row < 10) world[row][col] = 0;
+            else if (row === 10) world[row][col] = 1;
+            else world[row][col] = 2;
+        }
+    }
+
+    for (let tree = 0; tree < 8; tree++) {
+        const x = Math.floor(Math.random() * 46) + 2;
+        world[9][x] = 3;
+        world[8][x] = 3;
+        world[7][x] = 3;
+        world[6][x] = 4;
+        world[7][x-1] = 4;
+        world[7][x+1] = 4;
+        world[6][x-1] = 4;
+        world[6][x+1] = 4;
+        world[5][x] = 4;
+
+    }
+
+    inventory.dirt = 0;
+    inventory.grass = 0;
+    inventory.wood = 0;
+    inventory.leaves = 0;
+
+    droppedItems.length = 0;
+}
 
 function drawMenu() {
 
@@ -311,6 +360,26 @@ for (let i = 0; i < blockTypes.length; i++) {
 }
 
 
+function drawSelectedBlockIndicator() {
+    if (inventoryOpen) return;
+
+    const blockColor = BLOCK_TYPES[selectedBlock].color;
+
+    ctx.fillStyle = blockColor;
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+
+    const x = player.x - cameraX + player.width / 2 - 10;
+    const y = player.y - 30;
+
+    ctx.fillRect(x, y, 20, 20);
+    ctx.strokeRect(x,y,20,20);
+    ctx.fillStyle = "white";
+    ctx.font = "10px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(selectedBlock, x + 10, y + 15)
+}
+
 function updateItems() { 
 
     for (let i = droppedItems.length - 1; i >= 0; i--) {
@@ -336,7 +405,8 @@ function updateItems() {
 }
 function draw() {
     
-    ctx.clearRect(0,0, canvas.width, canvas.height);
+    ctx.fillStyle = "skyblue";
+    ctx.fillRect(0,0, canvas.width, canvas.height);
 
     drawWorld();
 
@@ -347,7 +417,16 @@ function draw() {
     drawDroppedItems();
 
     drawInventory();
+
+    drawSelectedBlockIndicator();
+
+    drawHUD();
 }
+
+canvas.addEventListener("contextmenu", function(event) {
+    event.preventDefault();
+
+});
 
 canvas.addEventListener("mousedown", function(event) {
  
@@ -430,34 +509,57 @@ document.addEventListener("mouseup", function() {
 });
 
 function updateMining() {
+if (!mouseDown) return; 
+if (miningBlockX === -1) return;
 
-    if (!mouseDown) {
-        return;
+miningProgress++;
+
+if (miningProgress >= MINING_TIME) {
+    const blockType = world[miningBlockY][miningBlockX];
+
+    if (blockType !== 0){
+        droppedItems.push({
+            x: miningBlockX * TILE_SIZE + TILE_SIZE / 2,
+            y: miningBlockY * TILE_SIZE + TILE_SIZE / 2,
+            type: blockType
+        });
+
+        blocksMined++;
+        score += 10;
     }
-    if (miningBlockX === -1) {
-        return;
-    }
 
-    miningProgress++; 
-
-    if (miningProgress >= MINING_TIME) {
-
-       const blockType = world[miningBlockY][miningBlockX];
-
-       droppedItems.push({
-        x: miningBlockX * TILE_SIZE + TILE_SIZE / 2,
-        y: miningBlockY * TILE_SIZE + TILE_SIZE / 2,
-        type: blockType
-       });
-
-       world[miningBlockY][miningBlockX] = 0;
-        miningBlockX = -1;
-        miningBlockY = -1;
-        miningProgress = 0;
+    world[miningBlockY][miningBlockX] = 0;
+    miningBlockX = -1;
+    miningBlockY = -1;
+    miningProgress = 0;
+     
     }
 }
 
 
+function drawHUD() {
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.textAlign = "left";
+    ctx.fillText("Score: " + score, 10, 30);
+    ctx.fillStyle = blocksMined >= WIN_CONDITION ? "gold" : "white";
+    ctx.fillText("Blocks: " + blocksMined + "/" + WIN_CONDITION, 10, 55);
+
+    if (gameOver) {
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(0,0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "white";
+        ctx.font = "48px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2 - 50);
+        
+        ctx.font = "24px Arial";
+        ctx.fillText("Final Score: " + score, canvas.width/2, canvas.height/2 + 10);
+        ctx.fillText("Press R to restart", canvas.width/2, canvas.height/2 + 60);
+    
+    }
+}
 function drawMiningEffect() {
 
     if (miningBlockX == -1) {
@@ -533,6 +635,11 @@ function drawDroppedItems() {
     }
 }
 
+function checkWinCondition() {
+    if (blocksMined >= WIN_CONDITION) {
+        gameOver = true;
+    }
+}
    
 
 function gameLoop() {
@@ -541,10 +648,12 @@ function gameLoop() {
 
         drawMenu();   
     } else if (gameState === "playing") {
-
-        updatePlayer();
-        updateMining();
-        updateItems();
+        if (!gameOver) {
+            updatePlayer();
+            updateMining();
+            updateItems();
+            checkWinCondition();
+        }
         draw();
     }
     requestAnimationFrame(gameLoop);
